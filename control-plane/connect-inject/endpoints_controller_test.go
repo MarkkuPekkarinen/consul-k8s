@@ -2789,6 +2789,70 @@ func TestReconcileUpdateEndpoint(t *testing.T) {
 			},
 			enableACLs: true,
 		},
+		// When a Deployment has the mesh annotation removed, Kube will delete the old pods. When it deletes the last Pod,
+		// the endpoints object will contain only non-mesh pods, but you'll still have one consul service instance to clean up.
+		{
+			name:          "When a Deployment moves from mesh to non mesh its service instances should be deleted",
+			consulSvcName: "service-updated",
+			k8sObjects: func() []runtime.Object {
+				pod2 := createPod("pod2", "2.3.4.5", false, false)
+				endpoint := &corev1.Endpoints{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "service-updated",
+						Namespace: "default",
+					},
+					Subsets: []corev1.EndpointSubset{
+						{
+							Addresses: []corev1.EndpointAddress{
+								{
+									IP:       "2.3.4.5",
+									NodeName: &nodeName,
+									TargetRef: &corev1.ObjectReference{
+										Kind:      "Pod",
+										Name:      "pod2",
+										Namespace: "default",
+									},
+								},
+							},
+						},
+					},
+				}
+				return []runtime.Object{pod2, endpoint}
+			},
+			initialConsulSvcs: []*api.AgentServiceRegistration{
+				{
+					ID:      "pod1-service-updated",
+					Name:    "service-updated",
+					Port:    80,
+					Address: "1.2.3.4",
+					Meta: map[string]string{
+						MetaKeyKubeServiceName: "service-updated",
+						MetaKeyKubeNS:          "default",
+						MetaKeyManagedBy:       managedByValue,
+						MetaKeyPodName:         "pod1",
+					},
+				},
+				{
+					Kind:    api.ServiceKindConnectProxy,
+					ID:      "pod1-service-updated-sidecar-proxy",
+					Name:    "service-updated-sidecar-proxy",
+					Port:    20000,
+					Address: "1.2.3.4",
+					Proxy: &api.AgentServiceConnectProxyConfig{
+						DestinationServiceName: "service-updated",
+						DestinationServiceID:   "pod1-service-updated",
+					},
+					Meta: map[string]string{
+						MetaKeyKubeServiceName: "service-updated",
+						MetaKeyKubeNS:          "default",
+						MetaKeyManagedBy:       managedByValue,
+						MetaKeyPodName:         "pod1",
+					},
+				},
+			},
+			expectedConsulSvcInstances: nil,
+			expectedProxySvcInstances:  nil,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
