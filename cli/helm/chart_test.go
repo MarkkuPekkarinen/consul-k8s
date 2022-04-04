@@ -2,10 +2,16 @@ package helm
 
 import (
 	"embed"
+	"fmt"
 	"testing"
 
 	"github.com/hashicorp/consul-k8s/cli/test/mock"
 	"github.com/stretchr/testify/require"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/release"
+	"helm.sh/helm/v3/pkg/storage"
+	"helm.sh/helm/v3/pkg/storage/driver"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 // Embed a test chart to test against.
@@ -44,6 +50,28 @@ func TestFetchChartValues(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, expected, actual)
+}
+
+func TestA(t *testing.T) {
+	k8s := fake.NewSimpleClientset()
+
+	config := new(action.Configuration)
+	config.KubeClient = mock.FakeClient{
+		K8sClient: k8s,
+	}
+	d := driver.NewSecrets(k8s.CoreV1().Secrets("default"))
+	d.Log = mock.CreateLogger(t)
+	r := &release.Release{
+		Name: "consul",
+	}
+	d.Create("consul", r)
+	store := storage.Init(d)
+	config.Releases = store
+
+	actual, err := a(config, "consul")
+	require.NoError(t, err)
+
+	fmt.Println(actual)
 }
 
 func TestReadChartFiles(t *testing.T) {

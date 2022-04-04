@@ -16,10 +16,21 @@ func InitActionConfig(actionConfig *action.Configuration, namespace string, sett
 	getter := settings.RESTClientGetter()
 	configFlags := getter.(*genericclioptions.ConfigFlags)
 	configFlags.Namespace = &namespace
-	err := actionConfig.Init(settings.RESTClientGetter(), namespace,
-		os.Getenv("HELM_DRIVER"), logger)
+
+	err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), logger)
 	if err != nil {
 		return nil, fmt.Errorf("error setting up helm action configuration to find existing installations: %s", err)
 	}
+
+	return actionConfig, nil
+}
+
+func NewActionConfig(namespace string, settings *helmCLI.EnvSettings, logger action.DebugLog) (*action.Configuration, error) {
+	actionConfig := &action.Configuration{}
+	err := actionConfig.Init(settings.RESTClientGetter(), namespace, os.Getenv("HELM_DRIVER"), logger)
+	if err != nil {
+		return nil, fmt.Errorf("error setting up helm action configuration to find existing installations: %s", err)
+	}
+
 	return actionConfig, nil
 }

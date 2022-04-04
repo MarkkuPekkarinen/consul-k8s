@@ -44,6 +44,16 @@ func FetchChartValues(namespace, name string, settings *helmCLI.EnvSettings, uiL
 	return release.Config, nil
 }
 
+func a(config *action.Configuration, name string) (map[string]interface{}, error) {
+	status := action.NewStatus(config)
+	release, err := status.Run(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return release.Config, nil
+}
+
 // readChartFiles reads the chart files from the embedded file system, and loads
 // their contents into []*loader.BufferedFile. This is a format that the Helm Go
 // SDK functions can read from to create a chart to install from. The names of
