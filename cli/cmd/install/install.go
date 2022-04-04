@@ -15,8 +15,10 @@ import (
 	"github.com/hashicorp/consul-k8s/cli/config"
 	"github.com/hashicorp/consul-k8s/cli/helm"
 	"github.com/hashicorp/consul-k8s/cli/release"
+	"github.com/hashicorp/consul-k8s/cli/test/mock"
 	"github.com/hashicorp/consul-k8s/cli/validation"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chartutil"
 	helmCLI "helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
@@ -344,6 +346,10 @@ func (c *Command) Run(args []string) int {
 	// Setup action configuration for Helm Go SDK function calls.
 	actionConfig := new(action.Configuration)
 	actionConfig, err = helm.InitActionConfig(actionConfig, c.flagNamespace, settings, uiLogger)
+	actionConfig.KubeClient = mock.FakeClient{
+		K8sClient: c.kubernetes,
+	}
+	actionConfig.Capabilities = chartutil.DefaultCapabilities
 	if err != nil {
 		c.UI.Output(err.Error(), terminal.WithErrorStyle())
 		return 1

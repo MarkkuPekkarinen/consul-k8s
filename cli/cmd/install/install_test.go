@@ -242,3 +242,12 @@ func TestCheckValidEnterprise(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "please make sure that the secret exists")
 }
+
+func TestInstall(t *testing.T) {
+	c := getInitializedCommand(t)
+	c.kubernetes = fake.NewSimpleClientset()
+
+	args := []string{"-auto-approve"}
+	code := c.Run(args)
+	require.Zero(t, code)
+}
