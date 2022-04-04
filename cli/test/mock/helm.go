@@ -3,6 +3,8 @@ package mock
 import (
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/resource"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest/fake"
 	"k8s.io/client-go/restmapper"
 )
@@ -77,9 +80,25 @@ func (f FakeClient) Build(reader io.Reader, validate bool) (kube.ResourceList, e
 	restMapper.Add(schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "DaemonSet"}, TestScope{})
 	restMapper.Add(schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "StatefulSet"}, TestScope{})
 
+	fakeServer := NewFakeServer()
+	roundTripper := func(req *http.Request) (*http.Response, error) {
+		var err error
+		req.URL, err = url.Parse(fakeServer.URL + req.URL.Path)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := fakeServer.Client().Do(req)
+		return resp, err
+	}
+
+	client := fake.CreateHTTPClient(roundTripper)
+
 	builder := resource.NewFakeBuilder(
 		func(version schema.GroupVersion) (resource.RESTClient, error) {
-			return &fake.RESTClient{}, nil
+			return &fake.RESTClient{
+				Client: client,
+				NegotiatedSerializer: scheme.Codecs.WithoutConversion(),
+			}, nil
 		},
 		func() (meta.RESTMapper, error) {
 			return restMapper, nil
