@@ -1,8 +1,11 @@
 ## UNRELEASED
 
 BUG FIXES:
+
 * Control Plane
   * Fix issue where upgrading a deployment from non-service mesh to service mesh would cause Pods to hang in init. [[GH-1136](https://github.com/hashicorp/consul-k8s/pull/1136)]
+* CLI
+  * Fix issue where clusters not in the same namespace as their deployment name could not be upgraded. [[GH-1115](https://github.com/hashicorp/consul-k8s/issues/1005)]
 
 ## 0.42.0 (April 04, 2022)
 
