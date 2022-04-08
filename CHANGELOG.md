@@ -2,6 +2,7 @@
 
 BUG FIXES:
   * Fix issue where clusters not in the same namespace as their deployment name could not be upgraded. [[GH-1115](https://github.com/hashicorp/consul-k8s/issue/1005)]
+  * Fix issue where the federation secret was not being found in certain configurations. [[GH-1154](https://github.com/hashicorp/consul-k8s/issue/1154)]
 
 IMPROVEMENTS:
 * Helm
